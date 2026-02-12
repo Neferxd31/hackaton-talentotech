@@ -3,6 +3,9 @@ package com.whatsboard.controller;
 import com.whatsboard.dto.WhatsappMessageDTO;
 import com.whatsboard.service.WhatsappService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,4 +20,10 @@ public class WebhookController {
     public void recibirMensaje(@RequestBody WhatsappMessageDTO dto) {
         whatsappService.procesarMensaje(dto);
     }
+
+    // AÑADE ESTE NUEVO para el Frontend
+@GetMapping("/mensajes")
+public List<WhatsappMessageDTO> obtenerMensajes() {
+    return whatsappService.listarTodos(); 
+}
 }

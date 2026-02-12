@@ -22,6 +22,11 @@ public class Conversacion {
 
     private Boolean atendida;
 
+    private String sentimiento;
+private String intencion;
+private String prioridad;
+private String resumen;
+
     @ManyToOne
     @JoinColumn(name = "cliente_id")
     private Cliente cliente;

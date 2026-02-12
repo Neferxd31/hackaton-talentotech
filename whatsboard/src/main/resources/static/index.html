@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>WhatsBoard CRM | Advanced Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200 min-h-screen font-sans">
+    <div class="flex">
+        <aside class="w-20 hover:w-64 transition-all duration-300 bg-[#0f172a] h-screen sticky top-0 border-r border-slate-800 p-4 flex flex-col items-center">
+            <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mb-10 shadow-lg shadow-green-500/20">
+                <span class="text-2xl font-black text-slate-900">W</span>
+            </div>
+            </aside>
+
+        <main class="flex-1 p-8">
+            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                <div>
+                    <h1 class="text-4xl font-extrabold tracking-tight text-white">Análisis de Clientes</h1>
+                    <p class="text-slate-400 mt-1">Reportes generados automáticamente por IA</p>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button onclick="downloadExcel()" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-lg border border-emerald-600/50 transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Excel
+                    </button>
+                    <button onclick="downloadPDF()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-4 py-2 rounded-lg border border-rose-600/50 transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        PDF
+                    </button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+                <div class="glass p-6 rounded-3xl lg:col-span-2">
+                    <canvas id="mainChart" height="120"></canvas>
+                </div>
+                <div class="glass p-6 rounded-3xl flex flex-col justify-center text-center">
+                    <h3 class="text-slate-400 text-sm font-medium">Total Mensajes</h3>
+                    <div id="totalCount" class="text-6xl font-black text-white my-2">0</div>
+                    <p class="text-green-400 text-xs font-bold">↑ 12% vs ayer</p>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl overflow-hidden shadow-2xl">
+                <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                    <h2 class="font-bold">Historial Reciente</h2>
+                    <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Live Sync</span>
+                </div>
+                <table class="w-full text-left" id="reportTable">
+                    <thead class="bg-slate-800/50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                        <tr>
+                            <th class="p-5 text-center">Sentimiento</th>
+                            <th class="p-5">Usuario</th>
+                            <th class="p-5">Resumen de IA</th>
+                            <th class="p-5">Prioridad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="messagesTable"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let rawData = []; // Guardaremos los datos para exportar
+
+        async function fetchData() {
+            const res = await fetch('http://localhost:8080/api/webhook/mensajes'); //
+            rawData = await res.json();
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('totalCount').innerText = rawData.length;
+            const table = document.getElementById('messagesTable');
+            table.innerHTML = rawData.map(m => `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                    <td class="p-5 text-center text-2xl">${m.sentimiento === 'positivo' ? '😊' : m.sentimiento === 'negativo' ? '😡' : '😐'}</td>
+                    <td class="p-5">
+                        <div class="font-bold text-white">${m.nombre}</div>
+                        <div class="text-xs text-slate-500">${m.numero}</div>
+                    </td>
+                    <td class="p-5 text-sm text-slate-300 italic">"${m.resumen}"</td>
+                    <td class="p-5">
+                        <span class="px-3 py-1 rounded-md text-[10px] font-bold ${m.prioridad === 'alta' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}">
+                            ${m.prioridad.toUpperCase()}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- FUNCIONES DE DESCARGA ---
+        function downloadExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(rawData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "CRM_Report");
+            XLSX.writeFile(workbook, "WhatsBoard_Report.xlsx");
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("Informe WhatsBoard CRM - " + new Date().toLocaleDateString(), 14, 15);
+            
+            const tableData = rawData.map(m => [m.nombre, m.numero, m.sentimiento, m.prioridad, m.resumen]);
+            doc.autoTable({
+                head: [['Nombre', 'Número', 'Sentimiento', 'Prioridad', 'Resumen']],
+                body: tableData,
+                startY: 25
+            });
+            doc.save("WhatsBoard_Report.pdf");
+        }
+
+        fetchData();
+        setInterval(fetchData, 15000); // Actualiza cada 15 seg
+    </script>
+</body>
+</html>
