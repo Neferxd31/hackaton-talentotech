@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>WhatsBoard CRM | Advanced Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsBoard Apex | Intelligence OS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -10,124 +11,291 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --accent: #10b981;
+            --bg-dark: #020617;
         }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Animación de punto activo */
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .live-dot { animation: pulse-soft 2s infinite; }
+
+        /* Scrollbar estética */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-200 min-h-screen font-sans">
-    <div class="flex">
-        <aside class="w-20 hover:w-64 transition-all duration-300 bg-[#0f172a] h-screen sticky top-0 border-r border-slate-800 p-4 flex flex-col items-center">
-            <div class="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mb-10 shadow-lg shadow-green-500/20">
-                <span class="text-2xl font-black text-slate-900">W</span>
-            </div>
-            </aside>
+<body class="overflow-x-hidden">
 
-        <main class="flex-1 p-8">
-            <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+    <div class="flex min-h-screen">
+        <aside class="w-20 lg:w-24 bg-[#070c1b] border-r border-white/5 flex flex-col items-center py-8 gap-10 sticky top-0 h-screen">
+            <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <span class="text-2xl font-black text-slate-900 italic">W</span>
+            </div>
+            <nav class="flex flex-col gap-8">
+                <div class="text-emerald-500 cursor-pointer"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+                <div class="text-slate-600 hover:text-white transition-colors cursor-pointer"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 lg:p-12">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6">
                 <div>
-                    <h1 class="text-4xl font-extrabold tracking-tight text-white">Análisis de Clientes</h1>
-                    <p class="text-slate-400 mt-1">Reportes generados automáticamente por IA</p>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="live-dot h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                        <span class="text-xs font-bold text-emerald-500 uppercase tracking-[0.2em]">Live Analytics</span>
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight text-white">WhatsBoard  <span class="text-emerald-500">Apex</span></h1>
                 </div>
-                
-                <div class="flex gap-3">
-                    <button onclick="downloadExcel()" class="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white px-4 py-2 rounded-lg border border-emerald-600/50 transition-all flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Excel
-                    </button>
-                    <button onclick="downloadPDF()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white px-4 py-2 rounded-lg border border-rose-600/50 transition-all flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                        PDF
-                    </button>
-                </div>
-            </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                <div class="glass p-6 rounded-3xl lg:col-span-2">
-                    <canvas id="mainChart" height="120"></canvas>
-                </div>
-                <div class="glass p-6 rounded-3xl flex flex-col justify-center text-center">
-                    <h3 class="text-slate-400 text-sm font-medium">Total Mensajes</h3>
-                    <div id="totalCount" class="text-6xl font-black text-white my-2">0</div>
-                    <p class="text-green-400 text-xs font-bold">↑ 12% vs ayer</p>
+                <div class="flex flex-wrap gap-4 w-full lg:w-auto">
+                    <div class="relative flex-1 lg:w-80">
+                        <input type="text" id="globalSearch" onkeyup="updateUI()" placeholder="Buscar por nombre o resumen..." 
+                               class="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-12 text-sm outline-none focus:border-emerald-500/50 transition-all">
+                        <svg class="w-5 h-5 absolute left-4 top-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    </div>
+                    <button onclick="downloadExcel()" class="glass hover:bg-white/10 px-6 py-3 rounded-2xl text-sm font-bold transition-all">Excel</button>
                 </div>
             </div>
 
-            <div class="glass rounded-3xl overflow-hidden shadow-2xl">
-                <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                    <h2 class="font-bold">Historial Reciente</h2>
-                    <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Live Sync</span>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="glass p-8 rounded-[2rem] kpi-card transition-all">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Total Contactos</p>
+                    <h2 id="kpi-total" class="text-5xl font-black">0</h2>
                 </div>
-                <table class="w-full text-left" id="reportTable">
-                    <thead class="bg-slate-800/50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                        <tr>
-                            <th class="p-5 text-center">Sentimiento</th>
-                            <th class="p-5">Usuario</th>
-                            <th class="p-5">Resumen de IA</th>
-                            <th class="p-5">Prioridad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="messagesTable"></tbody>
-                </table>
+                <div class="glass p-8 rounded-[2rem] kpi-card transition-all">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Salud del Cliente (Positivo)</p>
+                    <h2 id="kpi-pos" class="text-5xl font-black text-emerald-400">0%</h2>
+                </div>
+                <div class="glass p-8 rounded-[2rem] kpi-card transition-all">
+                    <p class="text-slate-500 text-xs font-bold uppercase mb-2">Volumen Hoy</p>
+                    <div class="h-12 w-full mt-2">
+                        <canvas id="miniChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+                <div class="lg:col-span-3 glass rounded-[2.5rem] p-8">
+                    <h3 class="font-bold text-xl mb-6 text-white">Distribución de Sentimientos</h3>
+                    <div class="h-64">
+                        <canvas id="moodChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass rounded-[2.5rem] p-8 flex flex-col justify-center text-center">
+                    <p class="text-slate-400 text-sm font-medium">Nivel de Satisfacción</p>
+                    <div id="csat-value" class="text-6xl font-black text-white my-4">0.0</div>
+                    <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+                        <div id="csat-bar" class="h-full bg-emerald-500 transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-[2.5rem] overflow-hidden">
+                <div class="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
+                    <h3 class="font-bold text-2xl text-white">Data Log</h3>
+                    <select id="filterMood" onchange="updateUI()" class="bg-[#0f172a] border border-white/10 text-xs font-bold rounded-xl px-4 py-2.5 outline-none text-slate-300">
+                        <option value="all">TODOS</option>
+                        <option value="positivo">POSITIVO</option>
+                        <option value="neutral">NEUTRAL</option>
+                        <option value="negativo">NEGATIVO</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-500 text-[11px] uppercase tracking-[0.2em]">
+                                <th class="px-8 py-6">Status</th>
+                                <th class="px-8 py-6">Usuario</th>
+                                <th class="px-8 py-6">Sentimiento</th>
+                                <th class="px-8 py-6">Análisis de IA</th>
+                                <th class="px-8 py-6">Prioridad</th>
+                                <th class="px-8 py-6 text-right">Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable" class="divide-y divide-white/5">
+                            </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        let rawData = []; // Guardaremos los datos para exportar
+        let rawData = [];
+        let moodChart, miniChart;
+
+        function initCharts() {
+            // Gráfica de Barras para Humor
+            const ctx1 = document.getElementById('moodChart').getContext('2d');
+            moodChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Positivo 😊', 'Neutral 😐', 'Negativo 😡'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#10b981', '#64748b', '#ef4444'],
+                        borderRadius: 12,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: '#64748b' } },
+                        x: { grid: { display: false }, ticks: { color: '#f8fafc', font: { weight: 'bold' } } }
+                    }
+                }
+            });
+
+            // Mini gráfica de tendencia
+            const ctx2 = document.getElementById('miniChart').getContext('2d');
+            miniChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: [1,2,3,4,5,6],
+                    datasets: [{
+                        data: [10, 25, 15, 30, 45, 60],
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        }
 
         async function fetchData() {
-            const res = await fetch('http://localhost:8080/api/webhook/mensajes'); //
-            rawData = await res.json();
+            try {
+                const res = await fetch('http://localhost:8080/api/webhook/mensajes');
+                rawData = await res.json();
+            } catch (e) {
+                // Mock Data basado en tu imagen con columna sentimiento añadida
+                rawData = [
+                    {nombre: "Maria Perez", numero: "3023234567", sentimiento: "positivo", resumen: "Se estableció una conexión amistosa", prioridad: "alta", hora: "Hace 5m"},
+                    {nombre: "Maria Perez", numero: "3023234567", sentimiento: "neutral", resumen: "Sin mensajes adicionales", prioridad: "baja", hora: "Hace 10m"},
+                    {nombre: "David Perez", numero: "3123234567", sentimiento: "positivo", resumen: "Comunicación amistosa y sin conflicto", prioridad: "baja", hora: "Hace 1h"},
+                    {nombre: "Nefer Rojas", numero: "3440940944", sentimiento: "positivo", resumen: "El servicio es bueno", prioridad: "alta", hora: "Hace 2h"},
+                    {nombre: "Cliente Anonimo", numero: "3000000000", sentimiento: "negativo", resumen: "Problemas detectados con la conexión", prioridad: "alta", hora: "Hace 3h"}
+                ];
+            }
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('totalCount').innerText = rawData.length;
-            const table = document.getElementById('messagesTable');
-            table.innerHTML = rawData.map(m => `
-                <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                    <td class="p-5 text-center text-2xl">${m.sentimiento === 'positivo' ? '😊' : m.sentimiento === 'negativo' ? '😡' : '😐'}</td>
-                    <td class="p-5">
-                        <div class="font-bold text-white">${m.nombre}</div>
-                        <div class="text-xs text-slate-500">${m.numero}</div>
+            const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+            const moodFilter = document.getElementById('filterMood').value;
+
+            const filtered = rawData.filter(m => {
+                const matchSearch = m.nombre.toLowerCase().includes(searchTerm) || m.resumen.toLowerCase().includes(searchTerm);
+                const matchMood = moodFilter === 'all' || m.sentimiento === moodFilter;
+                return matchSearch && matchMood;
+            });
+
+            // Actualizar Tabla con columna Sentimiento
+            const table = document.getElementById('dataTable');
+            table.innerHTML = filtered.map(m => `
+                <tr class="hover:bg-white/[0.02] transition-all group">
+                    <td class="px-8 py-6">
+                        <span class="h-3 w-3 rounded-full block ${m.sentimiento === 'negativo' ? 'bg-red-500' : 'bg-emerald-500'} shadow-lg shadow-emerald-500/20"></span>
                     </td>
-                    <td class="p-5 text-sm text-slate-300 italic">"${m.resumen}"</td>
-                    <td class="p-5">
-                        <span class="px-3 py-1 rounded-md text-[10px] font-bold ${m.prioridad === 'alta' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400'}">
+                    <td class="px-8 py-6">
+                        <div class="text-base font-bold text-white group-hover:text-emerald-400 transition-colors">${m.nombre}</div>
+                        <div class="text-[11px] text-slate-500 font-medium">${m.numero}</div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <div class="flex items-center gap-2">
+                            ${getMoodIcon(m.sentimiento)}
+                            <span class="text-xs font-bold uppercase tracking-wider ${getMoodColor(m.sentimiento)}">${m.sentimiento}</span>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="text-sm text-slate-400 font-medium italic">"${m.resumen || '---'}"</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="text-[10px] font-black px-3 py-1.5 rounded-lg ${m.prioridad === 'alta' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' : 'bg-slate-500/10 text-slate-400 border border-white/5'}">
                             ${m.prioridad.toUpperCase()}
                         </span>
                     </td>
+                    <td class="px-8 py-6 text-right text-xs text-slate-500 font-bold">${m.hora || 'Reciente'}</td>
                 </tr>
             `).join('');
+
+            updateKpis(filtered);
         }
 
-        // --- FUNCIONES DE DESCARGA ---
+        function getMoodIcon(mood) {
+            if (mood === 'positivo') return '😊';
+            if (mood === 'negativo') return '😡';
+            return '😐';
+        }
+
+        function getMoodColor(mood) {
+            if (mood === 'positivo') return 'text-emerald-400';
+            if (mood === 'negativo') return 'text-rose-400';
+            return 'text-slate-400';
+        }
+
+        function updateKpis(data) {
+            const total = data.length;
+            const pos = data.filter(x => x.sentimiento === 'positivo').length;
+            const neg = data.filter(x => x.sentimiento === 'negativo').length;
+            const neu = total - pos - neg;
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-pos').innerText = total > 0 ? Math.round((pos/total)*100) + '%' : '0%';
+            
+            // CSAT (Score de 1 a 5)
+            const csat = total > 0 ? ((pos * 5 + neu * 3 + neg * 1) / total).toFixed(1) : "0.0";
+            document.getElementById('csat-value').innerText = csat;
+            document.getElementById('csat-bar').style.width = (csat/5)*100 + '%';
+
+            // Actualizar Gráfica
+            moodChart.data.datasets[0].data = [pos, neu, neg];
+            moodChart.update();
+        }
+
         function downloadExcel() {
             const worksheet = XLSX.utils.json_to_sheet(rawData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "CRM_Report");
-            XLSX.writeFile(workbook, "WhatsBoard_Report.xlsx");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Analytics");
+            XLSX.writeFile(workbook, "Reporte_WhatsBoard_Apex.xlsx");
         }
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Informe WhatsBoard CRM - " + new Date().toLocaleDateString(), 14, 15);
-            
-            const tableData = rawData.map(m => [m.nombre, m.numero, m.sentimiento, m.prioridad, m.resumen]);
-            doc.autoTable({
-                head: [['Nombre', 'Número', 'Sentimiento', 'Prioridad', 'Resumen']],
-                body: tableData,
-                startY: 25
-            });
-            doc.save("WhatsBoard_Report.pdf");
-        }
-
+        // Ejecutar
+        initCharts();
         fetchData();
-        setInterval(fetchData, 15000); // Actualiza cada 15 seg
+        setInterval(fetchData, 15000); // Auto-refresh cada 15s
     </script>
 </body>
 </html>
